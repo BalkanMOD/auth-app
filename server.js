@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
@@ -9,6 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const USERS_FILE = path.join(__dirname, 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
 app.use(bodyParser.json());
 
@@ -65,10 +67,10 @@ app.post('/login', async (req, res) => {
   }
 
   const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
-    expiresIn: '1h',
+    expiresIn: JWT_EXPIRES_IN,
   });
 
-  return res.json({ token });
+  return res.json({ token, expiresIn: JWT_EXPIRES_IN, tokenType: 'Bearer' });
 });
 
 function authenticateToken(req, res, next) {

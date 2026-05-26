@@ -10,7 +10,23 @@ Simple Node.js authentication app with registration, login, and JWT-protected pr
 
 ## Environment
 
-You can set a custom JWT secret with `JWT_SECRET`.
+You can set a custom JWT secret with `JWT_SECRET` and a custom expiration with `JWT_EXPIRES_IN`.
+
+## Environment
+
+Create a `.env` file from `.env.example` and set:
+
+- `PORT`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+
+Example:
+
+```env
+PORT=4000
+JWT_SECRET=your_strong_secret_here
+JWT_EXPIRES_IN=1h
+```
 
 ## API Endpoints
 

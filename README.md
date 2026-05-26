@@ -1,0 +1,26 @@
+# Auth App
+
+Simple Node.js authentication app with registration, login, and JWT-protected profile route.
+
+## Setup
+
+1. Open a terminal in `C:\Users\robin\auth-app`
+2. Run `npm install`
+3. Start the app with `npm start`
+
+## Environment
+
+You can set a custom JWT secret with `JWT_SECRET`.
+
+## API Endpoints
+
+- `POST /register`
+  - body: `{ "email": "user@example.com", "password": "secret" }`
+- `POST /login`
+  - body: `{ "email": "user@example.com", "password": "secret" }`
+- `GET /profile`
+  - header: `Authorization: Bearer <token>`
+
+## Notes
+
+This example uses a local `users.json` file for storage and is intended for learning and prototyping.

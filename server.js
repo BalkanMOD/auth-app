@@ -11,6 +11,8 @@ const PORT = process.env.PORT || 4000;
 const USERS_FILE = path.join(__dirname, 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'supersecretrefreshkey';
+const REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
 app.use(bodyParser.json());
 
@@ -42,7 +44,7 @@ app.post('/register', async (req, res) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = { id: Date.now(), email, password: hashedPassword };
+  const newUser = { id: Date.now(), email, password: hashedPassword, refreshTokens: [] };
   users.push(newUser);
   saveUsers(users);
 
@@ -70,7 +72,21 @@ app.post('/login', async (req, res) => {
     expiresIn: JWT_EXPIRES_IN,
   });
 
-  return res.json({ token, expiresIn: JWT_EXPIRES_IN, tokenType: 'Bearer' });
+  const refreshToken = jwt.sign({ userId: user.id, email: user.email }, REFRESH_TOKEN_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRES_IN,
+  });
+
+  user.refreshTokens = user.refreshTokens || [];
+  user.refreshTokens.push(refreshToken);
+  saveUsers(users);
+
+  return res.json({
+    token,
+    refreshToken,
+    expiresIn: JWT_EXPIRES_IN,
+    refreshExpiresIn: REFRESH_TOKEN_EXPIRES_IN,
+    tokenType: 'Bearer',
+  });
 });
 
 function authenticateToken(req, res, next) {
@@ -88,6 +104,31 @@ function authenticateToken(req, res, next) {
     next();
   });
 }
+
+app.post('/refresh', (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Refresh token is required.' });
+  }
+
+  jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, (err, payload) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired refresh token.' });
+    }
+
+    const users = loadUsers();
+    const user = users.find((u) => u.id === payload.userId);
+    if (!user || !user.refreshTokens || !user.refreshTokens.includes(refreshToken)) {
+      return res.status(403).json({ error: 'Refresh token not recognized.' });
+    }
+
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    });
+
+    return res.json({ token, expiresIn: JWT_EXPIRES_IN, tokenType: 'Bearer' });
+  });
+});
 
 app.get('/profile', authenticateToken, (req, res) => {
   res.json({ message: 'Authenticated request successful.', user: req.user });

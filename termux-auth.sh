@@ -4,8 +4,9 @@
 #   ./termux-auth.sh register user@example.com secret
 #   ./termux-auth.sh login user@example.com secret
 #   ./termux-auth.sh profile <token>
+#   ./termux-auth.sh refresh <refreshToken>
 
-SERVER_URL="http://<server-ip>:4000"
+SERVER_URL="http://10.0.2.2:4000"
 
 if [ -n "$TERMUX_SERVER_URL" ]; then
   SERVER_URL="$TERMUX_SERVER_URL"
@@ -17,6 +18,7 @@ Usage:
   TERMUX_SERVER_URL=http://<server-ip>:4000 ./termux-auth.sh register <email> <password>
   TERMUX_SERVER_URL=http://<server-ip>:4000 ./termux-auth.sh login <email> <password>
   TERMUX_SERVER_URL=http://<server-ip>:4000 ./termux-auth.sh profile <token>
+  TERMUX_SERVER_URL=http://<server-ip>:4000 ./termux-auth.sh refresh <refreshToken>
 
 Set SERVER_URL in the script or via TERMUX_SERVER_URL environment variable.
 EOF
@@ -51,6 +53,15 @@ function get_profile() {
   echo
 }
 
+function refresh_token() {
+  local refreshToken="$1"
+
+  curl -s -X POST "$SERVER_URL/refresh" \
+    -H "Content-Type: application/json" \
+    -d "{\"refreshToken\": \"$refreshToken\"}"
+  echo
+}
+
 if [ "$#" -lt 1 ]; then
   usage
 fi
@@ -70,6 +81,10 @@ case "$command" in
   profile)
     [ "$#" -eq 1 ] || usage
     get_profile "$1"
+    ;;
+  refresh)
+    [ "$#" -eq 1 ] || usage
+    refresh_token "$1"
     ;;
   *)
     usage
